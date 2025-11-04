@@ -28,7 +28,7 @@ class Player():
         self.y = y
 
 class Enviroment():
-    print("test")
+    pass
 
 
 
