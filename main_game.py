@@ -7,8 +7,8 @@ pygame.display.set_caption("game")
 clock = pygame.time.Clock()
 
 class Board(pygame.sprite.Sprite):
-    def init(self, x, y, color=(0, 0, 255)):
-        super().init()
+    def __init__(self, x, y, color=(0, 0, 255)):
+        super().__init__()
         self.image = pygame.Surface((1480, 780))
         self.image.fill(color)
         self.color = color
@@ -19,24 +19,33 @@ class Board(pygame.sprite.Sprite):
 
 
 class Player():
-    def init(self, x, y, color):
-        super().init()
+    def __init__(self, x, y, color):
+        super().__init__()
         self.image = pygame.Surface((25, 25))
         self.image.fill(color)
+        self.rect = self.image.get_rect(topleft = (x, y))
         self.color = color
         self.x = x
         self.y = y
 
-class Enviroment():
-    pass
+#class Enviroment():
+
+class Wall():
+    def __init__(self, x, y, color):
+        super().__init__()
+        self.image = pygame.Surface((50, 500))
+        self.image.fill(color)
+        self.rect = self.image.get_rect(topleft = (x, y))
+        self.color = color
+        self.x = x
+        self.y = y
 
 
+player = Player(250, 250, (0, 0, 255))
+board = Board(10, 10, (50, 50, 50))
+wall = Wall(400, 50, (150, 150, 150))
 
-
-player = Player()
-board = Board()
-
-c = 1
+speed = 5
 running = True
 while running:
     for event in pygame.event.get():
@@ -45,23 +54,34 @@ while running:
         screen.fill("black")
 
     keys = pygame.key.get_pressed()
-
+   
     if keys[pygame.K_LEFT]:
-        player.x -= 5
+        player.rect.x -= speed
+        if player.rect.colliderect(wall.rect):
+            player.rect.left = wall.rect.right
     if keys[pygame.K_RIGHT]:
-        player.x += 5
+        player.rect.x += speed
+        if player.rect.colliderect(wall.rect):
+            player.rect.right = wall.rect.left
     if keys[pygame.K_UP]:
-        player.y -= 5
+        player.rect.y -= speed
+        if player.rect.colliderect(wall.rect):
+            player.rect.top = wall.rect.bottom
     if keys[pygame.K_DOWN]:
-        player.y += 5
+        player.rect.y += speed
+        if player.rect.colliderect(wall.rect):
+            player.rect.bottom = wall.rect.top
 
 
+#ono to proste ide
 
     screen.blit(board.image, (board.x, board.y))
-    screen.blit(player.image, (player.x, player.y))
+    screen.blit(player.image, player.rect)
+    screen.blit(wall.image, wall.rect)
+
 
     pygame.display.flip()
-
+     
     clock.tick(60)
  
 pygame.quit()
