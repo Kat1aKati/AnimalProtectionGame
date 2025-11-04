@@ -27,8 +27,8 @@ class Player():
         self.x = x
         self.y = y
 
-#class Enviroment():
-
+class Enviroment():
+    print("test")
 
 
 
