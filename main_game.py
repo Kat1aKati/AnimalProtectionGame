@@ -15,8 +15,7 @@ class Board(pygame.sprite.Sprite):
         self.x = x
         self.y = y
 
-
-
+#onoToŽije
 
 class Player():
     def __init__(self, x, y, color):
