@@ -40,13 +40,13 @@ class Player():
 
     def move(self, keys, walls, box, board):
         dx, dy = 0, 0
-        if keys[pygame.K_LEFT]:
+        if keys[pygame.K_a]:
             dx = -self.speed
-        if keys[pygame.K_RIGHT]:
+        if keys[pygame.K_d]:
             dx = self.speed
-        if keys[pygame.K_UP]:
+        if keys[pygame.K_w]:
             dy = -self.speed
-        if keys[pygame.K_DOWN]:
+        if keys[pygame.K_s]:
             dy = self.speed
 
         self.rect.x += dx
@@ -153,14 +153,38 @@ class Box(Object):
 
         board.keep_inside(self.rect)
 
+class Dlazdica(Object):
+    def __init__(self, x, y, sx, sy, color):
+        super().__init__(x, y, sx, sy, color)
+    def placebox(self, box):
+        if box.colliderect(self.rect):
+            return True
+        else:
+            False
+
+class Door(Object):
+    def __init__(self, x, y, sx, sy, color):
+        super().__init__(x, y, sx, sy, color)
+    def move(self):
+         if dlazdica.placebox:
+             self.rect -= 5
+
+
+
 player = Player(250, 250, pygame.Color("#2200FE"))
 board = Board(10, 10, pygame.Color("#777777"))
 cow = Cow(200, 350, 20, 20, pygame.Color("#FFFFFF"))
 box = Box(200, 550, 50, 50, pygame.Color("#783E00"))
 walls = [
-    Wall(400, 50, 40, 500, pygame.Color("#474747")),
-    Wall(400, 700, 500, 40, pygame.Color("#474747")),
+    Wall(400, 50, 40, 400, pygame.Color("#474747")),
+    Wall(400, 700, 1080, 40, pygame.Color("#474747")),
+    Wall(1100, 250, 40, 450, pygame.Color("#474747"))
 ]
+dlazdica = Dlazdica(1300, 500, 50, 50, pygame.Color("#00FF00"))
+door = Dlazdica(1300, 500, 50, 50, pygame.Color("#00FF00"))
+
+
+#x, y, size x, sixe y
 
 speed = 5
 running = True
@@ -179,6 +203,7 @@ while running:
 
     screen.blit(board.image, (board.x, board.y))
     screen.blit(cow.image, cow.rect)
+    screen.blit(dlazdica.image, dlazdica.rect)
     screen.blit(player.image, player.rect)
     for wall in walls:
         screen.blit(wall.image, wall.rect)
