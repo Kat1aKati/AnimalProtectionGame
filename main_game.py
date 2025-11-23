@@ -219,4 +219,3 @@ while running:
  
 pygame.quit()
 
-#hellowokytfjkiorl
