@@ -5,6 +5,8 @@
 import pygame
 import random
 import time
+from statemachine import State, StateMachine
+
 
 pygame.init()
 screen = pygame.display.set_mode((1500, 800), pygame.RESIZABLE)
@@ -52,6 +54,15 @@ class Player():
             dy = -self.speed
         if keys[pygame.K_s]:
             dy = self.speed
+        if keys[pygame.K_LEFT]:
+            dx = -self.speed
+        if keys[pygame.K_RIGHT]:
+            dx = self.speed
+        if keys[pygame.K_UP]:
+            dy = -self.speed
+        if keys[pygame.K_DOWN]:
+            dy = self.speed
+
 
         self.rect.x += dx
         self.handle_collisions(walls, box, dx, 0)
@@ -109,6 +120,9 @@ class Cow(Object):
         self.change_direction_time = 0
         self.dx, self.dy = 0, 0 
 
+        self.state_machine = StateMachine(self)
+
+
     def update(self, walls, board):
         if pygame.time.get_ticks() > self.change_direction_time:
             self.dx = random.choice([-1, 0, 1])
@@ -132,6 +146,39 @@ class Cow(Object):
                 self.rect.y -= self.dy * self.speed
                 self.dx *= -1
                 self.dy *= -1
+
+        self.change_state(Idle(self))
+
+    def change_state(self, state):
+        self.state_machine.change_state(state)
+
+
+class CowState:
+    def __init__(self, hero):
+        self.hero = hero
+        self.name = self.__class__.__name__
+
+    def enter(self): pass
+    def exit(self): pass
+    def update(self, keys): pass
+
+class Idle(CowState):
+    def enter(self):
+        self.hero.velocity_y = 5
+
+    def update(self):
+        print("idle")
+        if wheat.picked_up:
+            self.hero.change_state(Scared(self.hero))
+
+
+class Scared(CowState):
+    def enter(self):
+        self.hero.velocity_y = 5
+
+    def update(self):
+        print("scared")
+
 
 
 class Box(Object):
@@ -157,21 +204,28 @@ class Box(Object):
 
         board.keep_inside(self.rect)
 
-class Dlazdica(Object):
-    def __init__(self, x, y, sx, sy, color):
-        super().__init__(x, y, sx, sy, color)
-    def placebox(self, box):
-        if box.colliderect(self.rect):
+    def placebox(self):
+        if self.rect.colliderect(dlazdica.rect):
             return True
         else:
             False
+
+class Dlazdica(Object):
+    def __init__(self, x, y, sx, sy, color):
+        super().__init__(x, y, sx, sy, color)
 
 class Door(Object):
     def __init__(self, x, y, sx, sy, color):
         super().__init__(x, y, sx, sy, color)
     def move(self):
-         if dlazdica.placebox:
-             self.rect -= 5
+         if box.placebox:
+             self.rect =- 5
+#3 states - idle, scared, wheat
+
+class Wheat(Object):
+    def __init__(self, x, y, sx, sy, color):
+        super().__init__(x, y, sx, sy, color)
+        self.picked_up = False
 
 
 
@@ -184,9 +238,9 @@ walls = [
     Wall(400, 700, 1080, 40, pygame.Color("#474747")),
     Wall(1100, 250, 40, 450, pygame.Color("#474747"))
 ]
-dlazdica = Dlazdica(1300, 500, 50, 50, pygame.Color("#00FF00"))
-door = Dlazdica(1300, 500, 50, 50, pygame.Color("#00FF00"))
-
+dlazdica = Dlazdica(1300, 500, 75, 75, pygame.Color("#00FF00"))
+door = Door(600, 50, 100, 50, pygame.Color("#FF0095"))
+wheat = Wheat(150, 100, 10, 10, pygame.Color("#D3BE00"))
 
 #x, y, size x, sixe y
 
@@ -198,25 +252,33 @@ while running:
             running = False
         screen.fill("black")
 
-
     keys = pygame.key.get_pressed()
 
     player.move(keys, walls, box, board)
     cow.update(walls, board)
+    
 
+    box.placebox()
+    door.move()
+
+    if player.rect.colliderect(wheat.rect):
+        wheat.picked_up = True
+        cow.state = wheat
 
     screen.blit(board.image, (board.x, board.y))
     screen.blit(cow.image, cow.rect)
+    screen.blit(door.image, [30, 30])
     screen.blit(dlazdica.image, dlazdica.rect)
     screen.blit(player.image, player.rect)
     for wall in walls:
         screen.blit(wall.image, wall.rect)
     screen.blit(box.image, box.rect)
+    screen.blit(wheat.image, wheat.rect)
 
     pygame.display.flip()
      
     clock.tick(60)
- 
+
 pygame.quit()
 
 #hellowokytfjkiorl
