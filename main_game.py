@@ -1,6 +1,7 @@
 #taže, prvy level by sme mohli dať ako tutorial. Hybal by si sa WASD (treba pridať) alebo šipky
 #V prvom leveli by mohol player odtlačiť ten pushable box na nejake miesto aby sa mu otvorili dvere a pustili by ho do dalšieho levelu
 #NPC (to ai) by mohlo mať nejaky hitbox aby sa s nim mohlo hybať, možno interagovať
+#commit needed!
 
 import pygame
 import random
