@@ -13,6 +13,5 @@ This game is about saving animals.
 
 
 
-
 ## About
-
+- This game takes place in place where you need to save animals and protect them, it's probably easy puzzle game and fun game! (we're new to this so please no hate we tried our best) 
