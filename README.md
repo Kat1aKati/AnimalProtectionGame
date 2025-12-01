@@ -25,9 +25,9 @@ cd REPO
 # Example for Node:
 npm install
 # Example for Python:
-# python -m venv .venv
-# source .venv/bin/activate
-# pip install -r requirements.txt
+ python -m venv .venv
+ source .venv/bin/activate
+ pip install -r requirements.txt
 ```
 (gonna update this later)
 
