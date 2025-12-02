@@ -3,6 +3,8 @@
 #NPC (to ai) by mohlo mať nejaky hitbox aby sa s nim mohlo hybať, možno interagovať
 #commit needed!
 
+#tell me to record voice lines as a "main" charachter for the game with ready lines to go
+
 import pygame
 import random
 import time
