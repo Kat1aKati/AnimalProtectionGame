@@ -122,9 +122,15 @@ class Cow(Object):
         self.dx, self.dy = 0, 0 
 
         self.state_machine = StateMachine(self)
+        
 
 
     def update(self, walls, board):
+        
+
+        print("current state: ", cow.state_machine.current_state)
+        if not self.state_machine.current_state:
+            self.change_state(Idle(self))
         if pygame.time.get_ticks() > self.change_direction_time:
             self.dx = random.choice([-1, 0, 1])
             self.dy = random.choice([-1, 0, 1])
@@ -148,7 +154,7 @@ class Cow(Object):
                 self.dx *= -1
                 self.dy *= -1
 
-        self.change_state(Scared(self))
+        
 
     def change_state(self, state):
         self.state_machine.change_state(state)
@@ -168,9 +174,10 @@ class Idle(CowState):
         print("entered idle state")
 
     def update(self):
-        print("idle")
-        if wheat.picked_up:
+        print(self, "idle state")
+        if wheat.picked_up == True:
             self.hero.change_state(Scared(self.hero))
+        
 
 
 class Scared(CowState):
@@ -178,7 +185,7 @@ class Scared(CowState):
         print("entered scared state")
 
     def update(self):
-        print("scared")
+        print(self, "scared state")
 
 
 
@@ -266,6 +273,8 @@ while running:
         wheat.picked_up = True
         cow.state = wheat
 
+    cow.state_machine.update()
+
     screen.blit(board.image, (board.x, board.y))
     screen.blit(cow.image, cow.rect)
     screen.blit(door.image, [30, 30])
@@ -277,7 +286,7 @@ while running:
     screen.blit(wheat.image, wheat.rect)
 
     pygame.display.flip()
-     
+    print(wheat.picked_up)
     clock.tick(60)
 
 pygame.quit()
