@@ -2,6 +2,7 @@
 #V prvom leveli by mohol player odtlačiť ten pushable box na nejake miesto aby sa mu otvorili dvere a pustili by ho do dalšieho levelu
 #NPC (to ai) by mohlo mať nejaky hitbox aby sa s nim mohlo hybať, možno interagovať
 #commit needed!
+#Restartovacie tlacitko (napr. R) aby keď sa hrač zasekne aby mohol reštartovať level a zopakovať
 
 import pygame
 import random
