@@ -5,7 +5,7 @@
 import pygame
 import random
 import time
-from statemachine import State, StateMachine
+from statemachine import StateMachine
 
 
 pygame.init()
@@ -147,7 +147,7 @@ class Cow(Object):
                 self.dx *= -1
                 self.dy *= -1
 
-        self.change_state(Idle(self))
+        self.change_state(Scared(self))
 
     def change_state(self, state):
         self.state_machine.change_state(state)
@@ -164,7 +164,7 @@ class CowState:
 
 class Idle(CowState):
     def enter(self):
-        self.hero.velocity_y = 5
+        print("entered idle state")
 
     def update(self):
         print("idle")
@@ -174,7 +174,7 @@ class Idle(CowState):
 
 class Scared(CowState):
     def enter(self):
-        self.hero.velocity_y = 5
+        print("entered scared state")
 
     def update(self):
         print("scared")
