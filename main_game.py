@@ -9,18 +9,17 @@ import time
 from statemachine import StateMachine
 
 
+
 pygame.init()
 screen = pygame.display.set_mode((1500, 800), pygame.RESIZABLE)
 pygame.display.set_caption("game")
 clock = pygame.time.Clock()
 
 class Board(pygame.sprite.Sprite):
-    def __init__(self, x, y, color=(0, 0, 255)):
+    def __init__(self, x, y, floor):
         super().__init__()
-        self.image = pygame.Surface((1480, 780)) #subject to change
-        self.image.fill(color)
+        self.image = pygame.image.load("image/floor.png").convert_alpha() #pozadie
         self.rect = self.image.get_rect(topleft = (x, y))
-        self.color = color
         self.x = x
         self.y = y
 
