@@ -9,14 +9,13 @@ import time
 from statemachine import StateMachine
 
 
-
 pygame.init()
 screen = pygame.display.set_mode((1500, 800), pygame.RESIZABLE)
 pygame.display.set_caption("game")
 clock = pygame.time.Clock()
 
 class Board(pygame.sprite.Sprite):
-    def __init__(self, x, y, floor):
+    def __init__(self, x, y, color=None):
         super().__init__()
         self.image = pygame.image.load("image/floor.png").convert_alpha() #pozadie
         self.rect = self.image.get_rect(topleft = (x, y))
@@ -36,7 +35,7 @@ class Board(pygame.sprite.Sprite):
 class Player():
     def __init__(self, x, y, color):
         super().__init__()
-        self.image = pygame.Surface((75, 75))
+        self.image = pygame.Surface((75, 75)) #player (change)
         self.image.fill(color)
         self.rect = self.image.get_rect(topleft = (x, y))
         self.color = color
@@ -116,6 +115,10 @@ class Wall(Object):
 class Cow(Object):
     def __init__(self, x, y, sx, sy, color):
         super().__init__(x, y, sx, sy, color)
+        self.image = pygame.image.load("image/cow.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (sx, sy))
+        self.rect = self.image.get_rect(topleft=(x, y))
+        
         self.speed = 2
         self.change_direction_time = 0
         self.dx, self.dy = 0, 0 
@@ -238,7 +241,7 @@ class Wheat(Object):
 
 player = Player(250, 250, pygame.Color("#2200FE"))
 board = Board(10, 10, pygame.Color("#777777"))
-cow = Cow(200, 350, 20, 20, pygame.Color("#FFFFFF"))
+cow = Cow(200, 350, 49, 40, pygame.Color("#FFFFFF"))
 box = Box(200, 550, 50, 50, pygame.Color("#783E00"))
 walls = [
     Wall(400, 50, 40, 400, pygame.Color("#474747")),
