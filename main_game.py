@@ -133,8 +133,6 @@ class Cow(Object):
 
     def update(self, walls, board):
         
-
-        print("current state: ", cow.state_machine.current_state)
         if not self.state_machine.current_state:
             self.change_state(Idle(self))
         if pygame.time.get_ticks() > self.change_direction_time:
@@ -180,7 +178,6 @@ class Idle(CowState):
         print("entered idle state")
 
     def update(self):
-        print(self, "idle state")
         if wheat.picked_up == True:
             self.hero.change_state(Scared(self.hero))
         
@@ -191,7 +188,7 @@ class Scared(CowState):
         print("entered scared state")
 
     def update(self):
-        print(self, "scared state")
+        pass
 
 
 
@@ -228,12 +225,15 @@ class Tile(Object):
     def __init__(self, x, y, sx, sy, color):
         super().__init__(x, y, sx, sy, color)
         self.activated = False
+        self.was_activated = False
     
     def activate_tile(self):
         if self.activated == False:
             self.activated = True
         else:
             self.activated = False
+        
+        print("Tile activated:" , self.activated)
 
 class Door(Object):
     def __init__(self, x, y, sx, sy, color):
@@ -241,10 +241,9 @@ class Door(Object):
         self.opened = False
    
     def shift_doors(self):
-        if self.opened == True:
-            self.opened = False
-        else:
-            self.opened = True
+        self.opened = all(tile.activated for tile in tiles)
+        
+
                 
 #3 states - idle, scared, wheat
 
@@ -261,15 +260,15 @@ player = Player(250, 250, pygame.Color("#2200FE"))
 board = Board(10, 10, pygame.Color("#777777"))
 cow = Cow(200, 350, 49, 40, pygame.Color("#FFFFFF"))
 box1 = Box(200, 550, 50, 50, pygame.Color("#783E00"))
-box2 = Box(100, 350, 50, 50, pygame.Color("#783E00"))
+box2 = Box(500, 200, 50, 50, pygame.Color("#783E00"))
 
 walls = [
     Wall(400, 50, 40, 400, pygame.Color("#474747")),
     Wall(400, 700, 1080, 40, pygame.Color("#474747")),
     Wall(1100, 250, 40, 450, pygame.Color("#474747"))
 ]
-tile1 = Tile(1300, 500, 75, 75, pygame.Color("#00FF00"))
-door = Door(600, 50, 100, 50, pygame.Color("#FF0095"))
+tile1 = Tile(500, 500, 75, 75, pygame.Color("#00FF00"))
+door = Door(300, 350, 100, 50, pygame.Color("#FF0095"))
 wheat = Wheat(150, 100, 10, 10, pygame.Color("#D3BE00"))
 
 
@@ -295,17 +294,37 @@ while running:
     if player.rect.colliderect(wheat.rect):
         wheat.picked_up = True
         cow.state = wheat
+    
+    for tile in tiles:
+        collision_result = tile.rect.collidelist(boxes)
+        colliding_now = collision_result != -1
+
+        # ENTERED
+        if colliding_now and not tile.was_activated:
+            tile.activate_tile()
+
+        # EXITED
+        if not colliding_now and tile.was_activated:
+            tile.activate_tile()
+
+        tile.was_activated = colliding_now
+
+    print(tile.activated)
+    if door.opened == True:
+
+        print("door opened")
 
 
     cow.state_machine.update()
 
     screen.blit(board.image, (board.x, board.y))
     screen.blit(cow.image, cow.rect)
-    screen.blit(door.image, [30, 30])
+    screen.blit(door.image, door.rect)
     for tile in tiles:
         screen.blit(tile.image, tile.rect)
         
     screen.blit(player.image, player.rect)
+    
     for wall in walls:
         screen.blit(wall.image, wall.rect)
 
@@ -315,7 +334,6 @@ while running:
     screen.blit(wheat.image, wheat.rect)
 
     pygame.display.flip()
-    print(wheat.picked_up)
     clock.tick(60)
 
 pygame.quit()
