@@ -45,7 +45,7 @@ class Player():
         self.y = y
         self.speed = 5
 
-    def move(self, keys, walls, box, board):
+    def move(self, keys, board):
         dx, dy = 0, 0
         if keys[pygame.K_a]:
             dx = -self.speed
@@ -66,13 +66,13 @@ class Player():
 
 
         self.rect.x += dx
-        self.handle_collisions(walls, box, dx, 0)
+        self.handle_collisions( dx, 0)
         self.rect.y += dy
-        self.handle_collisions(walls, box, 0, dy)
+        self.handle_collisions( 0, dy)
 
         board.keep_inside(self.rect)
 
-    def handle_collisions(self, walls, box, dx, dy):
+    def handle_collisions(self, dx, dy):
 
         for wall in walls:
             if self.rect.colliderect(wall.rect):
@@ -85,20 +85,22 @@ class Player():
                 if dy < 0:
                     self.rect.top = wall.rect.bottom
 
-        if self.rect.colliderect(box.rect):
+        for box in boxes:
 
-            if box.push(dx, dy, walls):
-                pass 
-            else:
+            if self.rect.colliderect(box.rect):
 
-                if dx > 0:
-                    self.rect.right = box.rect.left
-                if dx < 0:
-                    self.rect.left = box.rect.right
-                if dy > 0:
-                    self.rect.bottom = box.rect.top
-                if dy < 0:
-                    self.rect.top = box.rect.bottom
+                if box.push(dx, dy, walls):
+                    pass 
+                else:
+
+                    if dx > 0:
+                        self.rect.right = box.rect.left
+                    if dx < 0:
+                        self.rect.left = box.rect.right
+                    if dy > 0:
+                        self.rect.bottom = box.rect.top
+                    if dy < 0:
+                        self.rect.top = box.rect.bottom
 
 class Object():
     def __init__(self, x, y, sx, sy, color):
@@ -217,21 +219,33 @@ class Box(Object):
         board.keep_inside(self.rect)
 
     def placebox(self):
-        if self.rect.colliderect(dlazdica.rect):
+        if self.rect.collidelist(tiles):
             return True
         else:
             False
 
-class Dlazdica(Object):
+class Tile(Object):
     def __init__(self, x, y, sx, sy, color):
         super().__init__(x, y, sx, sy, color)
+        self.activated = False
+    
+    def activate_tile(self):
+        if self.activated == False:
+            self.activated = True
+        else:
+            self.activated = False
 
 class Door(Object):
     def __init__(self, x, y, sx, sy, color):
         super().__init__(x, y, sx, sy, color)
-    def move(self):
-         if box.placebox:
-             self.rect =- 5
+        self.opened = False
+   
+    def shift_doors(self):
+        if self.opened == True:
+            self.opened = False
+        else:
+            self.opened = True
+                
 #3 states - idle, scared, wheat
 
 class Wheat(Object):
@@ -240,20 +254,29 @@ class Wheat(Object):
         self.picked_up = False
 
 
+boxes = []
+tiles = []
 
 player = Player(250, 250, pygame.Color("#2200FE"))
 board = Board(10, 10, pygame.Color("#777777"))
 cow = Cow(200, 350, 49, 40, pygame.Color("#FFFFFF"))
-box = Box(200, 550, 50, 50, pygame.Color("#783E00"))
+box1 = Box(200, 550, 50, 50, pygame.Color("#783E00"))
+box2 = Box(100, 350, 50, 50, pygame.Color("#783E00"))
+
 walls = [
     Wall(400, 50, 40, 400, pygame.Color("#474747")),
     Wall(400, 700, 1080, 40, pygame.Color("#474747")),
     Wall(1100, 250, 40, 450, pygame.Color("#474747"))
 ]
-dlazdica = Dlazdica(1300, 500, 75, 75, pygame.Color("#00FF00"))
+tile1 = Tile(1300, 500, 75, 75, pygame.Color("#00FF00"))
 door = Door(600, 50, 100, 50, pygame.Color("#FF0095"))
 wheat = Wheat(150, 100, 10, 10, pygame.Color("#D3BE00"))
 
+
+boxes.append(box1)
+boxes.append(box2)
+
+tiles.append(tile1)
 #x, y, size x, sixe y
 
 speed = 5
@@ -266,27 +289,29 @@ while running:
 
     keys = pygame.key.get_pressed()
 
-    player.move(keys, walls, box, board)
+    player.move(keys, board)
     cow.update(walls, board)
-    
-
-    box.placebox()
-    door.move()
 
     if player.rect.colliderect(wheat.rect):
         wheat.picked_up = True
         cow.state = wheat
+
 
     cow.state_machine.update()
 
     screen.blit(board.image, (board.x, board.y))
     screen.blit(cow.image, cow.rect)
     screen.blit(door.image, [30, 30])
-    screen.blit(dlazdica.image, dlazdica.rect)
+    for tile in tiles:
+        screen.blit(tile.image, tile.rect)
+        
     screen.blit(player.image, player.rect)
     for wall in walls:
         screen.blit(wall.image, wall.rect)
-    screen.blit(box.image, box.rect)
+
+    for box in boxes:
+        screen.blit(box.image, box.rect)
+    
     screen.blit(wheat.image, wheat.rect)
 
     pygame.display.flip()
