@@ -1,4 +1,4 @@
-# AnimalProtectionGame
+# AnimalProtectionGame/SAVE THE ANIMALS
 
 This game is about saving animals.
 
