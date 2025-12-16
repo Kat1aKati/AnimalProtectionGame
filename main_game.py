@@ -90,8 +90,9 @@ class Player():
 
             if self.rect.colliderect(box.rect):
 
-                if box.push(dx, dy, walls):
-                    pass 
+                # Use central crash handler to attempt pushing the box (and any chained boxes)
+                if crash(box, dx, dy):
+                    pass
                 else:
 
                     if dx > 0:
@@ -158,6 +159,33 @@ class Cow(Object):
                 self.rect.y -= self.dy * self.speed
                 self.dx *= -1
                 self.dy *= -1
+        
+        for box in boxes:
+
+            if self.rect.colliderect(box.rect):
+                # cow uses self.dx/self.dy; convert to pixel deltas for Box.push
+                push_dx = int(self.dx * self.speed)
+                push_dy = int(self.dy * self.speed)
+
+                if box.push(push_dx, push_dy, walls):
+                    # push succeeded: bounce cow away
+                    self.dx *= -1
+                    self.dy *= -1
+                    self.rect.x += int(self.dx * self.speed)
+                    self.rect.y += int(self.dy * self.speed)
+                else:
+                    # push failed: block cow and reverse
+                    if push_dx > 0:
+                        self.rect.right = box.rect.left
+                    if push_dx < 0:
+                        self.rect.left = box.rect.right
+                    if push_dy > 0:
+                        self.rect.bottom = box.rect.top
+                    if push_dy < 0:
+                        self.rect.top = box.rect.bottom
+
+                    self.dx *= -1
+                    self.dy *= -1
 
         
 
@@ -197,24 +225,49 @@ class Box(Object):
     def __init__(self, x, y, sx, sy, color):
         super().__init__(x, y, sx, sy, color)
 
-    def push(self, dx, dy, walls):
-        self.rect.x += dx
-        for wall in walls:
-            if self.rect.colliderect(wall.rect):
-                if dx > 0:
-                    self.rect.right = wall.rect.left
-                if dx < 0:
-                    self.rect.left = wall.rect.right
+    def push(self, dx, dy, walls, visited=None):
 
-        self.rect.y += dy
-        for wall in walls:
-            if self.rect.colliderect(wall.rect):
-                if dy > 0:
-                    self.rect.bottom = wall.rect.top
-                if dy < 0:
-                    self.rect.top = wall.rect.bottom
+        if visited is None:
+            visited = set()
+        if id(self) in visited:
+            return False
+        visited.add(id(self))
+
+        orig = self.rect.copy()
+
+        if dx:
+            self.rect.x += dx
+            for wall in walls:
+                if self.rect.colliderect(wall.rect):
+                    self.rect = orig
+                    return False
+            for other in boxes:
+                if other is self:
+                    continue
+                if self.rect.colliderect(other.rect):
+
+                    if not other.push(dx, 0, walls, visited):
+                        self.rect = orig
+                        return False
+
+
+        if dy:
+            self.rect.y += dy
+            for wall in walls:
+                if self.rect.colliderect(wall.rect):
+                    self.rect = orig
+                    return False
+            for other in boxes:
+                if other is self:
+                    continue
+                if self.rect.colliderect(other.rect):
+
+                    if not other.push(0, dy, walls, visited):
+                        self.rect = orig
+                        return False
 
         board.keep_inside(self.rect)
+        return True
 
     def placebox(self):
         if self.rect.collidelist(tiles):
@@ -244,8 +297,11 @@ class Door(Object):
     def shift_doors(self):
         self.opened = all(tile.activated for tile in tiles)
         
-
+def crash(box, dx, dy):
+    return box.push(dx, dy, walls)
                 
+
+
 #3 states - idle, scared, wheat
 
 class Wheat(Object):
@@ -297,7 +353,7 @@ while running:
         cow.state = wheat
     
     for tile in tiles:
-        collision_result = tile.rect.collidelist(boxes)
+        collision_result = tile.rect.collidelist([b.rect for b in boxes])
         colliding_now = collision_result != -1
 
         # ENTERED
