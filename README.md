@@ -22,8 +22,6 @@ This game is about saving animals.
  ```bash
 git clone https://github.com/OWNER/REPO.git
 cd REPO
-# Example for Node:
-npm install
 # Example for Python:
  python -m venv .venv
  source .venv/bin/activate
