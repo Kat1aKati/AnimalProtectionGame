@@ -9,6 +9,7 @@
 import pygame
 import random
 import time
+import math
 from statemachine import StateMachine
 
 
@@ -85,6 +86,22 @@ class Player():
                     self.rect.bottom = wall.rect.top
                 if dy < 0:
                     self.rect.top = wall.rect.bottom
+
+        # block against wheat unless it's already picked up
+        try:
+            wheat_obj = wheat
+        except NameError:
+            wheat_obj = None
+
+        if wheat_obj is not None and not wheat_obj.picked_up and self.rect.colliderect(wheat_obj.rect):
+            if dx > 0:
+                self.rect.right = wheat_obj.rect.left
+            if dx < 0:
+                self.rect.left = wheat_obj.rect.right
+            if dy > 0:
+                self.rect.bottom = wheat_obj.rect.top
+            if dy < 0:
+                self.rect.top = wheat_obj.rect.bottom
 
         for box in boxes:
 
@@ -326,7 +343,7 @@ walls = [
 ]
 tile1 = Tile(500, 500, 75, 75, pygame.Color("#00FF00"))
 door = Door(300, 350, 100, 50, pygame.Color("#FF0095"))
-wheat = Wheat(150, 100, 10, 10, pygame.Color("#D3BE00"))
+wheat = Wheat(50, 60, 300, 20, pygame.Color("#D3BE00"))
 
 
 boxes.append(box1)
@@ -348,7 +365,8 @@ while running:
     player.move(keys, board)
     cow.update(walls, board)
 
-    if player.rect.colliderect(wheat.rect):
+    # pick up wheat only when pressing E while colliding
+    if keys[pygame.K_e] and player.rect.colliderect(wheat.rect):
         wheat.picked_up = True
         cow.state = wheat
     
@@ -356,27 +374,48 @@ while running:
         collision_result = tile.rect.collidelist([b.rect for b in boxes])
         colliding_now = collision_result != -1
 
-        # ENTERED
-        if colliding_now and not tile.was_activated:
-            tile.activate_tile()
-
-        # EXITED
-        if not colliding_now and tile.was_activated:
-            tile.activate_tile()
-
+        # set activation directly from current collision state
+        tile.activated = colliding_now
         tile.was_activated = colliding_now
 
-    print(tile.activated)
-    if door.opened == True:
-
+    # update door state based on all tiles
+    door.shift_doors()
+    if door.opened:
         print("door opened")
-
 
     cow.state_machine.update()
 
+    # cow-player collision: push player away and make cow back off
+    if cow.rect.colliderect(player.rect):
+        dx = player.rect.centerx - cow.rect.centerx
+        dy = player.rect.centery - cow.rect.centery
+        dist = math.hypot(dx, dy)
+        if dist == 0:
+            nx, ny = -1, 0
+        else:
+            nx = int(round(dx / dist))
+            ny = int(round(dy / dist))
+
+        push_amount = 20
+        # move player away and resolve collisions
+        player.rect.x += nx * push_amount
+        player.handle_collisions(nx * push_amount, 0)
+        player.rect.y += ny * push_amount
+        player.handle_collisions(0, ny * push_amount)
+        board.keep_inside(player.rect)
+
+        # send cow away
+        cow.dx = -nx
+        cow.dy = -ny
+        cow.rect.x += cow.dx * cow.speed * 5
+        cow.rect.y += cow.dy * cow.speed * 5
+        board.keep_inside(cow.rect)
+
     screen.blit(board.image, (board.x, board.y))
     screen.blit(cow.image, cow.rect)
-    screen.blit(door.image, door.rect)
+    # draw door only when opened
+    if door.opened:
+        screen.blit(door.image, door.rect)
     for tile in tiles:
         screen.blit(tile.image, tile.rect)
         
@@ -388,7 +427,9 @@ while running:
     for box in boxes:
         screen.blit(box.image, box.rect)
     
-    screen.blit(wheat.image, wheat.rect)
+    # draw wheat only if not yet picked up
+    if not wheat.picked_up:
+        screen.blit(wheat.image, wheat.rect)
 
     pygame.display.flip()
     clock.tick(60)
