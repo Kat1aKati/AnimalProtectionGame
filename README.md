@@ -8,14 +8,14 @@ This game is about saving animals.
 
 - [About](#about)
 - [How to install](#installation)
-- [Contact owner!](#contact)
+- [Contact owners!](#contact)
 
 
 
 
 
 ## About
-- This game takes place in place where you need to save animals and protect them, it's probably easy puzzle game and fun game! You as player will need to go through few levels and will need to do puzzle. puzzles - boxs & cows, buttons (we're new to this so please no hate we tried our best) 
+- when someone ask you: "are you animal saver?" they thinks you're saving cats dogs and other "basic" animals. but you will never realised in this game you will saving cows! yes.. cows... but! if you're puzzle lover you will enjoy it! even it doesn't look much as good as other games you may find it enjoyable game. we're trying our best because it's our first game! so we hope you will enjoy it as much as we work on it
 
 ## Installation
 - quick tutorial
@@ -29,5 +29,5 @@ cd REPO
 ```
 (gonna update this later)
 
-## Contact
-Katia — hracjednotka@gmail.com  
+## Contacts
+Katia — katia.kati1221@gmail.com  
