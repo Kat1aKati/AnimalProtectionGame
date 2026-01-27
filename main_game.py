@@ -1,107 +1,438 @@
+#taže, prvy level by sme mohli dať ako tutorial. Hybal by si sa WASD (treba pridať) alebo šipky
+#V prvom leveli by mohol player odtlačiť ten pushable box na nejake miesto aby sa mu otvorili dvere a pustili by ho do dalšieho levelu
+#NPC (to ai) by mohlo mať nejaky hitbox aby sa s nim mohlo hybať, možno interagovať
+#commit needed!
+
+
+#tell me to record voice lines as a "main" charachter for the game with ready lines to go
+
 import pygame
 import random
 import time
 import math
 from statemachine import StateMachine
 
-import world
-from board import Board
-from player import Player
-from object import Object, Wall, Box, Wheat, Tile, Door, walls, boxes, tiles
-from cow import Cow
 
-class Game:
-    def __init__(self):
-        pygame.init()
-        self.screen = pygame.display.set_mode((1500, 800), pygame.RESIZABLE)
-        pygame.display.set_caption("game")
-        self.clock = pygame.time.Clock()
-        self.running = True
+pygame.init()
+screen = pygame.display.set_mode((1500, 800), pygame.RESIZABLE)
+pygame.display.set_caption("game")
+clock = pygame.time.Clock()
 
-        self.setup()
+class Board(pygame.sprite.Sprite):
+    def __init__(self, x, y, color=None):
+        super().__init__()
+        self.image = pygame.image.load("image/floor.png").convert_alpha() #pozadie
+        self.rect = self.image.get_rect(topleft = (x, y))
+        self.x = x
+        self.y = y
 
-    def setup(self):
-        # move ALL object creation here
-        #maybe later
-        self.boxes = []
-        self.tiles = []
+    def keep_inside(self, rect):
+        if rect.left < self.rect.left:
+            rect.left = self.rect.left
+        if rect.right > self.rect.right:
+            rect.right = self.rect.right
+        if rect.top < self.rect.top:
+            rect.top = self.rect.top
+        if rect.bottom > self.rect.bottom:
+            rect.bottom = self.rect.bottom
 
-        self.player = Player(250, 250, pygame.Color("#2200FE"), self)
-        self.board = Board(10, 10)
-        self.cow = Cow(200, 350, 49, 40, pygame.Color("#FFFFFF"), self)
+class Player():
+    def __init__(self, x, y, color):
+        super().__init__()
+        self.image = pygame.Surface((75, 75)) #player (change)
+        self.image.fill(color)
+        self.rect = self.image.get_rect(topleft = (x, y))
+        self.color = color
+        self.x = x
+        self.y = y
+        self.speed = 5
 
-        self.walls = [
-            Wall(400, 50, 40, 400, pygame.Color("#474747"), self),
-            Wall(400, 700, 1080, 40, pygame.Color("#474747"), self),
-            Wall(1100, 250, 40, 450, pygame.Color("#474747"), self)
-        ]
+    def move(self, keys, board):
+        dx, dy = 0, 0
+        if keys[pygame.K_a]:
+            dx = -self.speed
+        if keys[pygame.K_d]:
+            dx = self.speed
+        if keys[pygame.K_w]:
+            dy = -self.speed
+        if keys[pygame.K_s]:
+            dy = self.speed
+        if keys[pygame.K_LEFT]:
+            dx = -self.speed
+        if keys[pygame.K_RIGHT]:
+            dx = self.speed
+        if keys[pygame.K_UP]:
+            dy = -self.speed
+        if keys[pygame.K_DOWN]:
+            dy = self.speed
 
-        self.boxes.append(Box(200, 550, 50, 50, pygame.Color("#783E00"), self))
-        self.boxes.append(Box(500, 200, 50, 50, pygame.Color("#783E00"), self))
 
-        self.tiles.append(Tile(500, 500, 75, 75, pygame.Color("#00FF00"), self))
+        self.rect.x += dx
+        self.handle_collisions( dx, 0)
+        self.rect.y += dy
+        self.handle_collisions( 0, dy)
 
-        self.door = Door(300, 350, 100, 50, pygame.Color("#FF0095"), self)
-        self.wheat = Wheat(150, 100, 10, 10, pygame.Color("#D3BE00"), self)
+        board.keep_inside(self.rect)
 
-    def run(self):
-        while self.running:
-            self.handle_events()
-            self.update()
-            self.render()
-            self.clock.tick(60)
+    def handle_collisions(self, dx, dy):
 
-        pygame.quit()
+        for wall in walls:
+            if self.rect.colliderect(wall.rect):
+                if dx > 0:
+                    self.rect.right = wall.rect.left
+                if dx < 0:
+                    self.rect.left = wall.rect.right
+                if dy > 0:
+                    self.rect.bottom = wall.rect.top
+                if dy < 0:
+                    self.rect.top = wall.rect.bottom
 
-    def handle_events(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
+        # block against wheat unless it's already picked up
+        try:
+            wheat_obj = wheat
+        except NameError:
+            wheat_obj = None
+
+        if wheat_obj is not None and not wheat_obj.picked_up and self.rect.colliderect(wheat_obj.rect):
+            if dx > 0:
+                self.rect.right = wheat_obj.rect.left
+            if dx < 0:
+                self.rect.left = wheat_obj.rect.right
+            if dy > 0:
+                self.rect.bottom = wheat_obj.rect.top
+            if dy < 0:
+                self.rect.top = wheat_obj.rect.bottom
+
+        for box in boxes:
+
+            if self.rect.colliderect(box.rect):
+
+                # Use central crash handler to attempt pushing the box (and any chained boxes)
+                if crash(box, dx, dy):
+                    pass
+                else:
+
+                    if dx > 0:
+                        self.rect.right = box.rect.left
+                    if dx < 0:
+                        self.rect.left = box.rect.right
+                    if dy > 0:
+                        self.rect.bottom = box.rect.top
+                    if dy < 0:
+                        self.rect.top = box.rect.bottom
+
+class Object():
+    def __init__(self, x, y, sx, sy, color):
+        super().__init__()
+        self.image = pygame.Surface((sx, sy))
+        self.image.fill(color)
+        self.rect = self.image.get_rect(topleft = (x, y))
+        self.color = color
+        self.x = x
+        self.y = y
+
+class Wall(Object):
+    def __init__(self, x, y,  sx, sy, color):
+        super().__init__(x, y, sx, sy, color)
+
+class Cow(Object):
+    def __init__(self, x, y, sx, sy, color):
+        super().__init__(x, y, sx, sy, color)
+        self.image = pygame.image.load("image/cow.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (sx, sy))
+        self.rect = self.image.get_rect(topleft=(x, y))
+        
+        self.speed = 2
+        self.change_direction_time = 0
+        self.dx, self.dy = 0, 0 
+
+        self.state_machine = StateMachine(self)
+        
+
+
+    def update(self, walls, board):
+        
+        if not self.state_machine.current_state:
+            self.change_state(Idle(self))
+        if pygame.time.get_ticks() > self.change_direction_time:
+            self.dx = random.choice([-1, 0, 1])
+            self.dy = random.choice([-1, 0, 1])
+            self.change_direction_time = pygame.time.get_ticks() + random.randint(1000, 2000)
+
+        self.rect.x += self.dx * self.speed
+        self.rect.y += self.dy * self.speed
+
+        if self.rect.left < board.rect.left or self.rect.right > board.rect.right:
+            self.dx *= -1
+        if self.rect.top < board.rect.top or self.rect.bottom > board.rect.bottom:
+            self.dy *= -1
+
+        board.keep_inside(self.rect)
+
+        for wall in walls:
+            if self.rect.colliderect(wall.rect):
+
+                self.rect.x -= self.dx * self.speed
+                self.rect.y -= self.dy * self.speed
+                self.dx *= -1
+                self.dy *= -1
+        
+        for box in boxes:
+
+            if self.rect.colliderect(box.rect):
+                # cow uses self.dx/self.dy; convert to pixel deltas for Box.push
+                push_dx = int(self.dx * self.speed)
+                push_dy = int(self.dy * self.speed)
+
+                if box.push(push_dx, push_dy, walls):
+                    # push succeeded: bounce cow away
+                    self.dx *= -1
+                    self.dy *= -1
+                    self.rect.x += int(self.dx * self.speed)
+                    self.rect.y += int(self.dy * self.speed)
+                else:
+                    # push failed: block cow and reverse
+                    if push_dx > 0:
+                        self.rect.right = box.rect.left
+                    if push_dx < 0:
+                        self.rect.left = box.rect.right
+                    if push_dy > 0:
+                        self.rect.bottom = box.rect.top
+                    if push_dy < 0:
+                        self.rect.top = box.rect.bottom
+
+                    self.dx *= -1
+                    self.dy *= -1
+
+        
+
+    def change_state(self, state):
+        self.state_machine.change_state(state)
+
+
+class CowState:
+    def __init__(self, hero):
+        self.hero = hero
+        self.name = self.__class__.__name__
+
+    def enter(self): pass
+    def exit(self): pass
+    def update(self, keys): pass
+
+class Idle(CowState):
+    def enter(self):
+        print("entered idle state")
 
     def update(self):
-        keys = pygame.key.get_pressed()
+        if wheat.picked_up == True:
+            self.hero.change_state(Scared(self.hero))
+        
 
-        self.player.move(keys, self.board)
-        self.cow.update(self.walls, self.board)
-        self.door.shift_doors()
 
-        if self.player.rect.colliderect(self.wheat.rect):
-            self.wheat.picked_up = True
+class Scared(CowState):
+    def enter(self):
+        print("entered scared state")
 
-        for tile in self.tiles:
-            colliding = tile.rect.collidelist(self.boxes) != -1
+    def update(self):
+        pass
 
-            if colliding and not tile.was_activated:
-                tile.activate_tile()
 
-            if not colliding and tile.was_activated:
-                tile.activate_tile()
 
-            tile.was_activated = colliding
+class Box(Object):
+    def __init__(self, x, y, sx, sy, color):
+        super().__init__(x, y, sx, sy, color)
 
-        self.cow.state_machine.update()
+    def push(self, dx, dy, walls, visited=None):
 
-    def render(self):
-        self.screen.fill("black")
+        if visited is None:
+            visited = set()
+        if id(self) in visited:
+            return False
+        visited.add(id(self))
 
-        self.screen.blit(self.board.image, self.board.rect)
-        self.screen.blit(self.player.image, self.player.rect)
-        self.screen.blit(self.cow.image, self.cow.rect)
-        self.screen.blit(self.wheat.image, self.wheat.rect)
+        orig = self.rect.copy()
 
-        for wall in self.walls:
-            self.screen.blit(wall.image, wall.rect)
+        if dx:
+            self.rect.x += dx
+            for wall in walls:
+                if self.rect.colliderect(wall.rect):
+                    self.rect = orig
+                    return False
+            for other in boxes:
+                if other is self:
+                    continue
+                if self.rect.colliderect(other.rect):
 
-        for box in self.boxes:
-            self.screen.blit(box.image, box.rect)
+                    if not other.push(dx, 0, walls, visited):
+                        self.rect = orig
+                        return False
 
-        for tile in self.tiles:
-            self.screen.blit(tile.image, tile.rect)
 
-        if self.door.opened:
-            self.screen.blit(self.door.image, self.door.rect)
+        if dy:
+            self.rect.y += dy
+            for wall in walls:
+                if self.rect.colliderect(wall.rect):
+                    self.rect = orig
+                    return False
+            for other in boxes:
+                if other is self:
+                    continue
+                if self.rect.colliderect(other.rect):
 
-        pygame.display.flip()
+                    if not other.push(0, dy, walls, visited):
+                        self.rect = orig
+                        return False
 
-if __name__ == "__main__":
-    Game().run()
+        board.keep_inside(self.rect)
+        return True
+
+    def placebox(self):
+        if self.rect.collidelist(tiles):
+            return True
+        else:
+            False
+
+class Tile(Object):
+    def __init__(self, x, y, sx, sy, color):
+        super().__init__(x, y, sx, sy, color)
+        self.activated = False
+        self.was_activated = False
+    
+    def activate_tile(self):
+        if self.activated == False:
+            self.activated = True
+        else:
+            self.activated = False
+        
+        print("Tile activated:" , self.activated)
+
+class Door(Object):
+    def __init__(self, x, y, sx, sy, color):
+        super().__init__(x, y, sx, sy, color)
+        self.opened = False
+   
+    def shift_doors(self):
+        self.opened = all(tile.activated for tile in tiles)
+        
+def crash(box, dx, dy):
+    return box.push(dx, dy, walls)
+                
+
+
+#3 states - idle, scared, wheat
+
+class Wheat(Object):
+    def __init__(self, x, y, sx, sy, color):
+        super().__init__(x, y, sx, sy, color)
+        self.picked_up = False
+
+
+boxes = []
+tiles = []
+
+player = Player(250, 250, pygame.Color("#2200FE"))
+board = Board(10, 10, pygame.Color("#777777"))
+cow = Cow(200, 350, 49, 40, pygame.Color("#FFFFFF"))
+box1 = Box(200, 550, 50, 50, pygame.Color("#783E00"))
+box2 = Box(500, 200, 50, 50, pygame.Color("#783E00"))
+
+walls = [
+    Wall(400, 50, 40, 400, pygame.Color("#474747")),
+    Wall(400, 700, 1080, 40, pygame.Color("#474747")),
+    Wall(1100, 250, 40, 450, pygame.Color("#474747"))
+]
+tile1 = Tile(500, 500, 75, 75, pygame.Color("#00FF00"))
+door = Door(300, 350, 100, 50, pygame.Color("#FF0095"))
+wheat = Wheat(50, 60, 300, 20, pygame.Color("#D3BE00"))
+
+
+boxes.append(box1)
+boxes.append(box2)
+
+tiles.append(tile1)
+#x, y, size x, sixe y
+
+speed = 5
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        screen.fill("black")
+
+    keys = pygame.key.get_pressed()
+
+    player.move(keys, board)
+    cow.update(walls, board)
+
+    # pick up wheat only when pressing E while colliding
+    if keys[pygame.K_e] and player.rect.colliderect(wheat.rect):
+        wheat.picked_up = True
+        cow.state = wheat
+    
+    for tile in tiles:
+        collision_result = tile.rect.collidelist([b.rect for b in boxes])
+        colliding_now = collision_result != -1
+
+        # set activation directly from current collision state
+        tile.activated = colliding_now
+        tile.was_activated = colliding_now
+
+    # update door state based on all tiles
+    door.shift_doors()
+    if door.opened:
+        print("door opened")
+
+    cow.state_machine.update()
+
+    # cow-player collision: push player away and make cow back off
+    if cow.rect.colliderect(player.rect):
+        dx = player.rect.centerx - cow.rect.centerx
+        dy = player.rect.centery - cow.rect.centery
+        dist = math.hypot(dx, dy)
+        if dist == 0:
+            nx, ny = -1, 0
+        else:
+            nx = int(round(dx / dist))
+            ny = int(round(dy / dist))
+
+        push_amount = 20
+        # move player away and resolve collisions
+        player.rect.x += nx * push_amount
+        player.handle_collisions(nx * push_amount, 0)
+        player.rect.y += ny * push_amount
+        player.handle_collisions(0, ny * push_amount)
+        board.keep_inside(player.rect)
+
+        # send cow away
+        cow.dx = -nx
+        cow.dy = -ny
+        cow.rect.x += cow.dx * cow.speed * 5
+        cow.rect.y += cow.dy * cow.speed * 5
+        board.keep_inside(cow.rect)
+
+    screen.blit(board.image, (board.x, board.y))
+    screen.blit(cow.image, cow.rect)
+    # draw door only when opened
+    if door.opened:
+        screen.blit(door.image, door.rect)
+    for tile in tiles:
+        screen.blit(tile.image, tile.rect)
+        
+    screen.blit(player.image, player.rect)
+    
+    for wall in walls:
+        screen.blit(wall.image, wall.rect)
+
+    for box in boxes:
+        screen.blit(box.image, box.rect)
+    
+    # draw wheat only if not yet picked up
+    if not wheat.picked_up:
+        screen.blit(wheat.image, wheat.rect)
+
+    pygame.display.flip()
+    clock.tick(60)
+
+pygame.quit()
+
