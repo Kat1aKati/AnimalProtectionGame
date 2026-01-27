@@ -91,5 +91,7 @@ Troubleshooting
 - Activate the .venv before pip installing to avoid permission issues.
 - If pip fails building a package, paste the error here and I can help.
 
+(i hope its correct)
+
 ## Contacts
 Katia — katia.kati1221@gmail.com
