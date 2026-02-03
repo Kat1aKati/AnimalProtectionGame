@@ -7,7 +7,7 @@ from statemachine import StateMachine
 import world
 from board import Board
 from player import Player
-from object import Object, Wall, Box, Wheat, Tile, Door, walls, boxes, tiles
+from object import Object, Wall, Box, Wheat, Tile, Door
 from cow import Cow
 
 class Game:
@@ -80,6 +80,7 @@ class Game:
             tile.was_activated = colliding
 
         self.cow.state_machine.update()
+
 
     def render(self):
         self.screen.fill("black")

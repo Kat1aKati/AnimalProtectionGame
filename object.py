@@ -1,10 +1,7 @@
 import pygame
 
-walls = []
-boxes = []
-tiles = []
 
-board = None
+
 wheat = None
 
 class Object:
@@ -37,11 +34,11 @@ class Box(Object):
 
         if dx:
             self.rect.x += dx
-            for wall in walls:
+            for wall in self.game.walls:
                 if self.rect.colliderect(wall.rect):
                     self.rect = orig
                     return False
-            for other in boxes:
+            for other in self.game.boxes:
                 if other is self:
                     continue
                 if self.rect.colliderect(other.rect):
@@ -57,7 +54,7 @@ class Box(Object):
                 if self.rect.colliderect(wall.rect):
                     self.rect = orig
                     return False
-            for other in boxes:
+            for other in self.game.boxes:
                 if other is self:
                     continue
                 if self.rect.colliderect(other.rect):
@@ -66,11 +63,11 @@ class Box(Object):
                         self.rect = orig
                         return False
 
-        board.keep_inside(self.rect)
+        self.game.board.keep_inside(self.rect)
         return True
 
     def placebox(self):
-        if self.rect.collidelist(tiles):
+        if self.rect.collidelist(self.game.tiles):
             return True
         else:
             False
@@ -95,7 +92,7 @@ class Door(Object):
         self.opened = False
    
     def shift_doors(self):
-        self.opened = all(tile.activated for tile in tiles)
+        self.opened = all(tile.activated for tile in self.game.tiles)
         
 def crash(box, dx, dy):
     return box.push(dx, dy, walls)

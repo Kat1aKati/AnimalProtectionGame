@@ -1,5 +1,5 @@
 import pygame
-import world
+
 
 class Player:
     def __init__(self, x, y, color, game):
@@ -11,6 +11,7 @@ class Player:
         self.x = x
         self.y = y
         self.speed = 5
+        self.game = game
 
     def move(self, keys, board):
         dx, dy = 0, 0
@@ -39,19 +40,24 @@ class Player:
         board.keep_inside(self.rect)
 
     def handle_collisions(self, dx, dy):
-        for wall in world.walls:
+        for wall in self.game.walls:
             if self.rect.colliderect(wall.rect):
+                
                 if dx > 0:
                     self.rect.right = wall.rect.left
+                    
                 if dx < 0:
                     self.rect.left = wall.rect.right
+                    
                 if dy > 0:
                     self.rect.bottom = wall.rect.top
+                    
                 if dy < 0:
                     self.rect.top = wall.rect.bottom
+                
 
         # block against wheat unless it's already picked up
-        wheat_obj = world.wheat
+        wheat_obj = self.game.wheat
         if wheat_obj is not None and not wheat_obj.picked_up and self.rect.colliderect(wheat_obj.rect):
             if dx > 0:
                 self.rect.right = wheat_obj.rect.left
@@ -62,9 +68,10 @@ class Player:
             if dy < 0:
                 self.rect.top = wheat_obj.rect.bottom
 
-        for box in world.boxes:
+        for box in self.game.boxes:
+
             if self.rect.colliderect(box.rect):
-                if box.push(dx, dy, world.walls):
+                if box.push(dx, dy, self.game.walls):
                     pass
                 else:
                     if dx > 0:

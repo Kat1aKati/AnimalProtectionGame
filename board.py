@@ -3,7 +3,7 @@ import pygame
 class Board(pygame.sprite.Sprite):
     def __init__(self, x, y, color=None):
         super().__init__()
-        self.image = pygame.image.load("AnimalProtectionGame/image/floor.png").convert_alpha()
+        self.image = pygame.image.load("image/floor.png").convert_alpha()
         self.rect = self.image.get_rect(topleft=(x, y))
         self.x = x
         self.y = y

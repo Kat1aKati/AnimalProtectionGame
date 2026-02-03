@@ -7,7 +7,7 @@ import cow_statemachine
 class Cow(Object):
     def __init__(self, x, y, sx, sy, color, game):
         super().__init__(x, y, sx, sy, color,game)
-        self.image = pygame.image.load("AnimalProtectionGame/image/cow.png").convert_alpha()
+        self.image = pygame.image.load("image/cow.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, (sx, sy))
         self.rect = self.image.get_rect(topleft=(x, y))
         
